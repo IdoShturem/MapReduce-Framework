@@ -26,7 +26,7 @@ barrier(multiThreadLevel),
    // init thread vectors
    threads_vector.reserve(multy_thread_level);
    for(int i=0; i < multy_thread_level; ++i){
-        threads_vector.push_back(std::thread(&MapReduceJob::thread_func,this,i));
+        threads_vector.push_back(std::jthread(&MapReduceJob::thread_func,this,i));
    }
 }
 

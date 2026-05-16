@@ -61,7 +61,7 @@ private:
 	int multy_thread_level;
 
     // vectors
-	std::vector<std::thread> threads_vector;
+	std::vector<std::jthread> threads_vector;
 	std::vector<IntermediateVec> intermediate_vectors; // private vec for each thread-prevent racing
 
 	// for indexes and state
