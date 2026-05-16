@@ -32,7 +32,22 @@ barrier(multiThreadLevel),
 
 MapReduceState MapReduceJob::getState(void) const
 {
-    // TODO: implement this function
+    MapReduceState state;
+    // extract data from job_state
+    uint64_t current_state = job_state.load();
+    uint64_t stage_val = current_state >> 62; 
+    uint64_t total_val = (current_state >> 31) & 0x7FFFFFFF;
+    uint64_t processed_val = current_state & 0x7FFFFFFF;
+    state.stage = static_cast<MapReduceStage>(stage_val);
+    if (total_val == 0) {
+        state.percentage = 0.0;
+    } else {
+        state.percentage = (static_cast<double>(processed_val) / static_cast<double>(total_val)) * 100.0;
+    }
+    return state;
+
+    
+
 }
 
 void MapReduceJob::wait(void)
