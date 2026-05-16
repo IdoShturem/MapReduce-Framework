@@ -2,7 +2,13 @@
 #define MAP_REDUCE_JOB_H
 
 #include "MapReduceClient.h"
-// you can add other includes here
+#include <atomic>              
+#include <thread>             
+#include <mutex>              
+#include <condition_variable> 
+#include <barrier>             
+#include <queue>               
+#include <vector>
 
 enum MapReduceStage
 {
@@ -49,9 +55,44 @@ public:
 	OutputVec getOutput(void);
 
 private:
-	/*
-		You can change everything on this part (these are just recommendations)
-	*/
+	// references from constructor
+    const InputVec& input_vector;
+	const MapReduceClient& client;
+	int multy_thread_level;
+
+    // vectors
+	std::vector<std::jthread> threads_vector;
+	std::vector<IntermediateVec> intermediate_vectors; // private vec for each thread-prevent racing
+
+	// for indexes and state
+	std::atomic<size_t> next_input_index;
+	std::atomic<uint64_t> job_state;
+
+	// conditions
+	std::barrier<> barrier;
+	std::condition_variable queue_cnd;
+
+	//mutexes
+	std::mutex output_mtx; // reduce sheild
+	std::mutex queue_mtx; // for shuffle queue
+	std::mutex wait_mtx; // for wait()
+	
+	//shuffle
+	std::queue<IntermediateVec> shuffle_queue;
+	
+	//output
+	OutputVec output_vector;
+
+	// flags
+	std::atomic<bool> is_done;
+	std::atomic<bool> is_join;
+
+	// function for thread init
+	void thread_func(int thread_id);
+
+	//friends
+	friend class MapContext;
+	friend class ReduceContext;
 };
 	
 #endif // MAP_REDUCE_JOB_H
