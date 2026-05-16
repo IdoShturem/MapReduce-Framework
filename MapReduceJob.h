@@ -56,13 +56,13 @@ public:
 
 private:
 	// references from constructor
-	InputVec& input_vector;
-	MapReduceClient& client;
+    const InputVec& input_vector;
+	const MapReduceClient& client;
 	int multy_thread_level;
 
     // vectors
-	std::vector<std::thread> threads;
-	std::vector<IntermediateVec> mid_vecs; // private vec for each thread-prevent racing
+	std::vector<std::thread> threads_vector;
+	std::vector<IntermediateVec> intermediate_vectors; // private vec for each thread-prevent racing
 
 	// for indexes and state
 	std::atomic<size_t> next_input_index;
@@ -87,6 +87,8 @@ private:
 	std::atomic<bool> is_done;
 	std::atomic<bool> is_join;
 
+	// function for thread init
+	void thread_func(int thread_id);
 
 	//friends
 	friend class MapContext;
