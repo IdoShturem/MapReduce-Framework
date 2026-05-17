@@ -13,7 +13,7 @@ multy_thread_level(multiThreadLevel),
 is_done(false), 
 is_join(false), 
 next_input_index(0),
-barrier(multiThreadLevel),
+barrier(multiThreadLevel)
 {
    // init 2 bit for state, 31 bit total num of keys to process, 31 bits already proccesed keys
    uint64_t init_stage = static_cast<uint64_t>(MAP_STAGE) << 62;
@@ -26,7 +26,7 @@ barrier(multiThreadLevel),
    // init thread vectors
    threads_vector.reserve(multy_thread_level);
    for(int i=0; i < multy_thread_level; ++i){
-        threads_vector.push_back(std::jthread(&MapReduceJob::thread_func,this,i));
+        threads_vector.push_back(std::thread(&MapReduceJob::thread_func,this,i));
    }
 }
 
@@ -45,14 +45,18 @@ MapReduceState MapReduceJob::getState(void) const
         state.percentage = (static_cast<double>(processed_val) / static_cast<double>(total_val)) * 100.0;
     }
     return state;
-
-    
-
 }
 
 void MapReduceJob::wait(void)
 {
-    // TODO: implement this function
+    std::lock_guard<std::mutex> lock(wait_mtx);
+    if(is_join.load()) return; // already joined
+    for(auto& thread : threads_vector){
+        if(thread.joinable()){
+            thread.join();
+        }
+    }
+    is_join.store(true);
 }
 
 OutputVec MapReduceJob::getOutput(void)
