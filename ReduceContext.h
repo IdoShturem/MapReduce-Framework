@@ -3,15 +3,20 @@
 
 #include "MapReduceKeys.h"
 
+class MapReduceJob;
+
 class ReduceContext
 {
 public:
     void addOutput(std::shared_ptr<K3> key, std::shared_ptr<V3> value);
 
+    ReduceContext(MapReduceJob* job);
     /*
     You can change everything else, including the constructor/desturctor
     You can also add fields here (even public ones)
     */
+private:
+    MapReduceJob* job;
 };
 
 #endif // REDUCE_CONTEXT_H
