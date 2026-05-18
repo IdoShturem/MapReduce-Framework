@@ -1,5 +1,7 @@
 #include "MapReduceJob.h"
 #include <thread>
+#include <algorithm>
+
 /*
 ===============================================
 Implement:
@@ -61,15 +63,25 @@ void MapReduceJob::wait(void)
 
 OutputVec MapReduceJob::getOutput(void)
 {
-    // TODO: implement this function
+    // wait for job to finish
+    wait();
+    // lock
+    std::lock_guard<std::mutex> lock(output_mtx);
+    //sort the output vector base on key values
+    std::sort(output_vector.begin(), output_vector.end(),
+                [](const OutputPair& a , const OutputPair& b){
+                    return *(a.first) < *(b.first);
+                });
+    return output_vector;
+    
 }
 
 bool MapReduceJob::isDone(void) const
 {
-    // TODO: implement this function
+    return is_done.load();
 }
 
 MapReduceJob::~MapReduceJob()
 {
-    // TODO: implement this destructor
+    wait();
 }
