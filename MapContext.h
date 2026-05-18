@@ -12,10 +12,15 @@ public:
     */
     void addIntermediate(std::shared_ptr<K2> key, std::shared_ptr<V2> value);
 
+
+    MapContext(IntermediateVec* intermidiate_vector);
     /*
     You can change everything else, including the constructor/desturctor
     You can also add fields here (even public ones)
     */
+private:
+    IntermediateVec* intermidate_thread_vec;
+
 };
 
 #endif // MAP_CONTEXT_H
