@@ -86,6 +86,7 @@ private:
 	// flags
 	std::atomic<bool> is_done;
 	std::atomic<bool> is_join;
+	std::atomic<bool> shuffle_done;
 
 	// function for thread init
 	void thread_func(int thread_id);
