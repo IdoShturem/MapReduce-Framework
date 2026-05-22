@@ -67,6 +67,7 @@ private:
 	// for indexes and state
 	std::atomic<size_t> next_input_index;
 	std::atomic<uint64_t> job_state;
+	std::atomic<int> completed_threads;
 
 	// conditions
 	std::barrier<> barrier;
@@ -86,6 +87,7 @@ private:
 	// flags
 	std::atomic<bool> is_done;
 	std::atomic<bool> is_join;
+	std::atomic<bool> shuffle_done;
 
 	// function for thread init
 	void thread_func(int thread_id);
