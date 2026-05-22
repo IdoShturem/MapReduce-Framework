@@ -9,14 +9,15 @@ Implement:
 */
 
 MapReduceJob::MapReduceJob(const MapReduceClient &client, const InputVec &inputVec, int multiThreadLevel):
-client(client), 
 input_vector(inputVec),
+client(client), 
 multy_thread_level(multiThreadLevel),
+next_input_index(0),
+completed_threads(0),
+barrier(multiThreadLevel),
 is_done(false), 
 is_join(false),
-shuffle_done(false),
-next_input_index(0),
-barrier(multiThreadLevel)
+shuffle_done(false)
 {
    // init 2 bit for state, 31 bit total num of keys to process, 31 bits already proccesed keys
    uint64_t init_stage = static_cast<uint64_t>(MAP_STAGE) << 62;
@@ -116,12 +117,13 @@ void MapReduceJob::thread_func(int thread_id)
                 std::lock_guard<std::mutex> lock(queue_mtx);
                 shuffle_queue.push(current_key_vec);
             }
-            queue_cnd.notify_all();
+            
         }
 
         uint64_t reduce_stage_val = static_cast<uint64_t>(REDUCE_STAGE) << 62;
         job_state.store(reduce_stage_val | new_total_val | 0);
-        
+
+
         shuffle_done.store(true);
         queue_cnd.notify_all();  
     }
@@ -153,15 +155,13 @@ void MapReduceJob::thread_func(int thread_id)
       
         job_state.fetch_add(current_vec.size());
     }
-
     
-    uint64_t current_state = job_state.load();
-    uint64_t total = (current_state >> 31) & 0x7FFFFFFF;
-    uint64_t processed = current_state & 0x7FFFFFFF;
-    
-    if (processed == total) {
+    if (completed_threads.fetch_add(1) == multy_thread_level - 1)
+    {
         is_done.store(true);
     }
+
+    
 }
 
 MapReduceState MapReduceJob::getState(void) const
@@ -191,6 +191,7 @@ void MapReduceJob::wait(void)
         }
     }
     is_join.store(true);
+    
 }
 
 OutputVec MapReduceJob::getOutput(void)

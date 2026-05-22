@@ -67,6 +67,7 @@ private:
 	// for indexes and state
 	std::atomic<size_t> next_input_index;
 	std::atomic<uint64_t> job_state;
+	std::atomic<int> completed_threads;
 
 	// conditions
 	std::barrier<> barrier;
