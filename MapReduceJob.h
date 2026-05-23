@@ -92,6 +92,11 @@ private:
 	// function for thread init
 	void thread_func(int thread_id);
 
+	// Helper functions
+	void map_phase(int thread_id);
+	void shuffle_phase();
+
+
 	//friends
 	friend class MapContext;
 	friend class ReduceContext;

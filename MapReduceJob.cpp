@@ -33,9 +33,9 @@ shuffle_done(false)
         threads_vector.push_back(std::thread(&MapReduceJob::thread_func,this,i));
    }
 }
-void MapReduceJob::thread_func(int thread_id)
+
+void MapReduceJob::map_phase(int thread_id)
 {
-    
     MapContext map_context(&intermediate_vectors[thread_id]);
     
     while (true)
@@ -52,23 +52,11 @@ void MapReduceJob::thread_func(int thread_id)
         
         job_state.fetch_add(1);
     }
+}
 
-    
-    std::sort(intermediate_vectors[thread_id].begin(), 
-              intermediate_vectors[thread_id].end(),
-              [](const IntermediatePair& a, const IntermediatePair& b) {
-                  return *(a.first) < *(b.first);
-              });
-
-    //barrier
-    
-    // wait for all threads to finish the map phase and sort their intermediate vectors before to shuffle
-    barrier.arrive_and_wait();
-
-    
-    if (thread_id == 0)
-    {
-        uint64_t total_intermediate_pairs = 0;
+void MapReduceJob::shuffle_phase()
+{
+    uint64_t total_intermediate_pairs = 0;
         for (int i = 0; i < multy_thread_level; ++i)
         {
             total_intermediate_pairs += intermediate_vectors[i].size();
@@ -125,10 +113,32 @@ void MapReduceJob::thread_func(int thread_id)
 
 
         shuffle_done.store(true);
-        queue_cnd.notify_all();  
+        queue_cnd.notify_all();
+}
+
+void MapReduceJob::thread_func(int thread_id)
+{
+    // stage 1 - map phase  
+    map_phase(thread_id);
+
+    // stage 2 - sort phase
+    std::sort(intermediate_vectors[thread_id].begin(), 
+              intermediate_vectors[thread_id].end(),
+              [](const IntermediatePair& a, const IntermediatePair& b) {
+                  return *(a.first) < *(b.first);
+              });
+
+    //barrier
+    // wait for all threads to finish the map phase and sort their intermediate vectors before to shuffle
+    barrier.arrive_and_wait();
+
+    // stage 3 - shuffle phase
+    if (thread_id == 0)
+    {
+        shuffle_phase();
     }
 
-    
+    // stage 4 - reduce phase
     ReduceContext reduce_context(this);
 
     while (true)
@@ -160,8 +170,6 @@ void MapReduceJob::thread_func(int thread_id)
     {
         is_done.store(true);
     }
-
-    
 }
 
 MapReduceState MapReduceJob::getState(void) const
